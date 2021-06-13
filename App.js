@@ -39,18 +39,43 @@ const App = () => {
   async function GetTask() {
     const getTask = await Realm.open({
       path: 'myrealm',
-      schema: [TaskSchema],
+     // schema: [TaskSchema],
     });
 
     const taskList = getTask.objects(TASK_LIST_SCHEMA);
-    console.log(`The lists of tasks are: ${taskList.map(task => task)}`);
+  // console.log(`The lists of tasks are: ${taskList.map(task =>JSON.stringify(task))}`);
     let taskListArray = [];
     taskList.map(task =>
-      taskListArray.push({name: task?.name, status: task?.status}),
+      taskListArray.push({_id:task?._id,name: task?.name, status: task?.status}),
     );
     setTaskList(taskListArray);
     getTask.close();
   }
+
+  const updateData  =async items => {
+   // console.log('items', items);
+    const updateTask = await Realm.open({
+      path: 'myrealm',
+    //  schema: [TaskSchema],
+    });
+    let getTask = updateTask.objectForPrimaryKey(TASK_LIST_SCHEMA,items?.item?._id)
+    console.log('task',getTask,getTask?.name,getTask?.status);
+
+    //update task
+    // updateTask.write(()=>{
+    //   getTask.status  = 'close';
+    //   getTask.name = 'testing';
+    // })
+
+    //delete task
+    updateTask.write(()=>{
+     updateTask.delete(getTask);
+     getTask = null;
+    })
+
+    GetTask()
+
+  };
   return (
     <SafeAreaView
       style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
@@ -65,15 +90,18 @@ const App = () => {
       <FlatList
         data={taskList}
         renderItem={items => {
-          console.log('items------', items);
+          //console.log('items------', items);
           return (
-            <View>
+            <TouchableOpacity
+              onPress={() => updateData(items)}
+              style={{margin: 10, borderColor: 'black'}}>
               <Text>{items?.item?.name}</Text>
               <Text>{items?.item?.status}</Text>
-            </View>
+            </TouchableOpacity>
           );
         }}
         keyExtractor={(items, index) => items + index}
+        //contentContainerStyle={{flex: 1}}
       />
     </SafeAreaView>
   );
